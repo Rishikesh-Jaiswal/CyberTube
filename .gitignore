@@ -1,3 +1,10 @@
 .env
 __pycache__/
 *.pyc
+*.aiff
+_a_*.mp3
+_v_*.mp4
+_s_*.png
+_concat.txt
+.DS_Store
+.claude/

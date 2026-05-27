@@ -510,10 +510,9 @@ def main():
     extract_thumb(final, thumb)
 
     print("Cleaning up temp files…")
-    for f in BASE.glob("_[asv]_*.{png,mp3,mp4}"):
-        f.unlink(missing_ok=True)
-    for f in BASE.glob("_s_*.png"):
-        f.unlink(missing_ok=True)
+    for pat in ["_a_*.mp3", "_a_*.aiff", "_v_*.mp4", "_s_*.png"]:
+        for f in BASE.glob(pat):
+            f.unlink(missing_ok=True)
 
     print("Updating website…")
     eps = load_episodes()
