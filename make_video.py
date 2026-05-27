@@ -5,12 +5,11 @@ Fetches top 5 cybersecurity stories, generates slides + narration,
 stitches into one MP4, and updates the CyberTube website.
 """
 
-import os, json, subprocess, shutil, sys
+import os, json, subprocess, shutil, sys, re
 from datetime import datetime, timezone
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 import feedparser
-import anthropic
 
 # ── Directories ───────────────────────────────────────────────────────────────
 BASE       = Path(__file__).parent
@@ -243,52 +242,42 @@ def extract_thumb(video: Path, thumb: Path):
 # News fetcher + summariser
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_env():
-    env_file = BASE / ".env"
-    if env_file.exists():
-        for line in env_file.read_text().splitlines():
-            if "=" in line and not line.startswith("#"):
-                k, _, v = line.partition("=")
-                os.environ.setdefault(k.strip(), v.strip())
+def _clean_html(raw: str) -> str:
+    """Strip HTML tags and collapse whitespace."""
+    text = re.sub(r"<[^>]+>", " ", raw)
+    text = re.sub(r"&nbsp;", " ", text)
+    text = re.sub(r"&amp;", "&", text)
+    text = re.sub(r"&lt;", "<", text)
+    text = re.sub(r"&gt;", ">", text)
+    text = re.sub(r"&#\d+;", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    # Keep first 3 sentences
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    return " ".join(sentences[:4])
 
 
 def fetch_and_summarise() -> list[dict]:
-    load_env()
     entries = []
     for source, url in RSS_FEEDS:
         try:
             feed = feedparser.parse(url)
             for e in feed.entries[:4]:
                 pub = e.get("published_parsed") or e.get("updated_parsed")
+                raw = e.get("summary", "") or e.get("description", "")
                 entries.append({
                     "source": source,
                     "title":  e.get("title", ""),
                     "link":   e.get("link",  ""),
-                    "raw":    e.get("summary", ""),
                     "published": datetime(*pub[:6], tzinfo=timezone.utc) if pub
                                  else datetime.now(timezone.utc),
+                    "summary": _clean_html(raw),
                 })
         except Exception as exc:
             print(f"  [warn] {source}: {exc}")
 
     entries.sort(key=lambda x: x["published"], reverse=True)
     top5 = entries[:5]
-
-    client = anthropic.Anthropic()
     for e in top5:
-        msg = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=420,
-            messages=[{"role": "user", "content": f"""You are a cybersecurity journalist for a non-technical audience.
-
-Title: {e['title']}
-Source: {e['source']}
-Content: {e['raw'][:3000]}
-
-Write a 4–5 sentence plain-English summary covering: what happened, who is affected, why it matters, and what to do.
-Conversational tone — this will be read aloud on a news broadcast. No bullets, no jargon. Paragraph form only."""}],
-        )
-        e["summary"] = msg.content[0].text
         print(f"  ✓ {e['title'][:58]}…")
     return top5
 
