@@ -5,11 +5,13 @@ Fetches top 5 cybersecurity stories, generates slides + narration,
 stitches into one MP4, and updates the CyberTube website.
 """
 
-import os, json, subprocess, shutil, sys, re
+import os, json, subprocess, shutil, sys, re, asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 import feedparser
+import edge_tts
+from groq import Groq
 
 # ── Directories ───────────────────────────────────────────────────────────────
 BASE       = Path(__file__).parent
@@ -28,9 +30,8 @@ TEXT     = (230, 237, 243)
 MUTED    = (139, 148, 158)
 DARK_TAG = (30,  37,  53)
 
-# ── Mac TTS ───────────────────────────────────────────────────────────────────
-SAY_VOICE = "Samantha"
-SAY_RATE  = 165
+# ── Edge TTS ─────────────────────────────────────────────────────────────────
+VOICE = "en-US-AriaNeural"   # free Microsoft neural voice, no API key needed
 
 # ── RSS sources ───────────────────────────────────────────────────────────────
 RSS_FEEDS = [
@@ -198,10 +199,10 @@ def slide_outro() -> Path:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def speak(text: str, out: Path):
-    subprocess.run(
-        ["say", "-v", SAY_VOICE, "-r", str(SAY_RATE), "-o", str(out), text],
-        check=True, capture_output=True,
-    )
+    async def _gen():
+        tts = edge_tts.Communicate(text, voice=VOICE)
+        await tts.save(str(out))
+    asyncio.run(_gen())
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -257,6 +258,14 @@ def _clean_html(raw: str) -> str:
 
 
 def fetch_and_summarise() -> list[dict]:
+    # Load .env for GROQ_API_KEY
+    env_file = BASE / ".env"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            if "=" in line and not line.startswith("#"):
+                k, _, v = line.partition("=")
+                os.environ.setdefault(k.strip(), v.strip())
+
     entries = []
     for source, url in RSS_FEEDS:
         try:
@@ -265,20 +274,42 @@ def fetch_and_summarise() -> list[dict]:
                 pub = e.get("published_parsed") or e.get("updated_parsed")
                 raw = e.get("summary", "") or e.get("description", "")
                 entries.append({
-                    "source": source,
-                    "title":  e.get("title", ""),
-                    "link":   e.get("link",  ""),
+                    "source":    source,
+                    "title":     e.get("title", ""),
+                    "link":      e.get("link",  ""),
+                    "raw":       _clean_html(raw),
                     "published": datetime(*pub[:6], tzinfo=timezone.utc) if pub
                                  else datetime.now(timezone.utc),
-                    "summary": _clean_html(raw),
                 })
         except Exception as exc:
             print(f"  [warn] {source}: {exc}")
 
     entries.sort(key=lambda x: x["published"], reverse=True)
     top5 = entries[:5]
+
+    client = Groq(api_key=os.environ["GROQ_API_KEY"])
+
     for e in top5:
+        resp = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=500,
+            messages=[{"role": "user", "content": f"""You are a cybersecurity news presenter writing a video script for a non-technical audience.
+
+Article title: {e['title']}
+Source: {e['source']}
+Content: {e['raw']}
+
+Write a narration script with this EXACT structure (no markdown, no bullet points):
+
+Start with a catchy one-line title that explains the threat in plain English.
+Then 3-4 sentences explaining: what happened, who is affected, why it's dangerous, any specific details like CVE numbers or company names.
+End with one sentence starting with "What to do:" giving clear action advice.
+
+Keep it conversational and clear — this will be read aloud as a news broadcast. No jargon."""}],
+        )
+        e["summary"] = resp.choices[0].message.content.strip()
         print(f"  ✓ {e['title'][:58]}…")
+
     return top5
 
 
@@ -452,7 +483,7 @@ def main():
     # Intro
     print("  [intro]")
     s_intro = slide_intro(date_str)
-    a_intro = BASE / "_a_intro.aiff"
+    a_intro = BASE / "_a_intro.mp3"
     speak(f"Welcome to Coralogix CyberTube. Here are today's top 5 cybersecurity stories for {date_str}.", a_intro)
     v_intro = BASE / "_v_intro.mp4"
     slide_to_mp4(s_intro, a_intro, v_intro)
@@ -462,7 +493,7 @@ def main():
     for i, story in enumerate(stories, 1):
         print(f"  [story {i}] {story['title'][:52]}…")
         s = slide_story(i, story)
-        a = BASE / f"_a_{i}.aiff"
+        a = BASE / f"_a_{i}.mp3"
         v = BASE / f"_v_{i}.mp4"
         narration = (f"Story {i}. {story['title']}. "
                      f"{story['summary']} "
@@ -474,7 +505,7 @@ def main():
     # Outro
     print("  [outro]")
     s_outro = slide_outro()
-    a_outro = BASE / "_a_outro.aiff"
+    a_outro = BASE / "_a_outro.mp3"
     speak("That's all for today's Coralogix CyberTube digest. Stay secure and stay informed. See you tomorrow.", a_outro)
     v_outro = BASE / "_v_outro.mp4"
     slide_to_mp4(s_outro, a_outro, v_outro)
@@ -487,7 +518,7 @@ def main():
     extract_thumb(final, thumb)
 
     print("Cleaning up temp files…")
-    for f in BASE.glob("_[asv]_*.{png,aiff,mp4}"):
+    for f in BASE.glob("_[asv]_*.{png,mp3,mp4}"):
         f.unlink(missing_ok=True)
     for f in BASE.glob("_s_*.png"):
         f.unlink(missing_ok=True)
