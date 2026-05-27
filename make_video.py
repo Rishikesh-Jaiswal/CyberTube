@@ -346,7 +346,7 @@ def regenerate_site(eps: list[dict]):
   <style>
     :root{{
       --bg:#0A0E1A;--surface:#141929;--border:#1E2535;
-      --accent:#FF6B35;--text:#E6EDF3;--muted:#8B949E;
+      --accent:#1CF09A;--text:#E6EDF3;--muted:#8B949E;
     }}
     *{{box-sizing:border-box;margin:0;padding:0}}
     body{{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh}}
@@ -394,7 +394,10 @@ def regenerate_site(eps: list[dict]):
 <body>
 <header>
   <div class="logo">
-    <span class="shield">&#x1F6E1;</span>
+    <svg width="34" height="24" viewBox="0 0 34 24" style="flex-shrink:0">
+      <rect width="34" height="24" rx="6" fill="#1CF09A"/>
+      <polygon points="13,6 13,18 24,12" fill="#0A0E1A"/>
+    </svg>
     <span><span class="cx">Coralogix</span> CyberTube<span class="sub">Daily Security Digest</span></span>
   </div>
   <div class="hdr-right">Updated daily &nbsp;·&nbsp; Powered by Claude AI</div>
