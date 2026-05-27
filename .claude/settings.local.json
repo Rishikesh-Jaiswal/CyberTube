@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:thehackernews.com)",
+      "WebFetch(domain:www.bleepingcomputer.com)",
+      "WebFetch(domain:cybersecuritynews.com)",
+      "Bash(pip show *)",
+      "Bash(pip3 show *)",
+      "Bash(pip3 install *)",
+      "Bash(ffmpeg -version)",
+      "Bash(gh auth *)",
+      "Bash(ssh -T git@github.com)",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}

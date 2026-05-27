@@ -25,7 +25,7 @@ W, H = 1280, 720
 # ── Brand colours (Coralogix) ─────────────────────────────────────────────────
 BG       = (10,  14, 26)
 SURFACE  = (20,  25, 41)
-ACCENT   = (255, 107, 53)   # Coralogix orange
+ACCENT   = (28, 240, 154)   # Coralogix green
 TEXT     = (230, 237, 243)
 MUTED    = (139, 148, 158)
 DARK_TAG = (30,  37,  53)
@@ -144,10 +144,6 @@ def slide_intro(date_str: str) -> Path:
 def slide_story(n: int, story: dict) -> Path:
     img, draw = _base_image()
 
-    # Subtle column grid
-    for gx in range(0, W, 100):
-        draw.line([(gx, 0), (gx, H)], fill=(255, 255, 255, 4), width=1)
-
     # Header row
     draw.text((44, 18), "CORALOGIX CYBERTUBE", font=_font(17), fill=ACCENT)
     date_txt = story["published"].strftime("%b %d, %Y")
@@ -169,11 +165,8 @@ def slide_story(n: int, story: dict) -> Path:
     draw.rectangle([44, y, W - 44, y + 2], fill=(*ACCENT, 70))
     y += 16
 
-    # Summary (capped to keep it on-slide)
-    summary = story["summary"]
-    if len(summary) > 430:
-        summary = summary[:427] + "…"
-    draw_wrapped(draw, summary, 25, 44, y, W - 88, MUTED, spacing=7)
+    # Summary — smaller font so full text fits without truncation
+    draw_wrapped(draw, story["summary"], 22, 44, y, W - 88, MUTED, spacing=6)
 
     # Source link at bottom
     link = story["link"][:75] + ("…" if len(story["link"]) > 75 else "")
@@ -496,8 +489,7 @@ def main():
         a = BASE / f"_a_{i}.mp3"
         v = BASE / f"_v_{i}.mp4"
         narration = (f"Story {i}. {story['title']}. "
-                     f"{story['summary']} "
-                     f"Source: {story['source']}.")
+                     f"{story['summary']}")
         speak(narration, a)
         slide_to_mp4(s, a, v)
         segs.append(v)
