@@ -5,25 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Coralogix CyberTube</title>
   <style>
-    :root{
-      --bg:#0A0E1A;--surface:#141929;--border:#1E2535;
-      --accent:#1CF09A;--text:#E6EDF3;--muted:#8B949E;
-    }
+    :root{--bg:#0A0E1A;--surface:#141929;--border:#1E2535;--accent:#1CF09A;--text:#E6EDF3;--muted:#8B949E;}
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh}
-
-    /* Header */
     header{background:var(--surface);border-bottom:3px solid var(--accent);height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:99}
-    .logo{font-size:1.25rem;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:.4rem}
-    .logo .shield{font-size:1.4rem}
+    .logo{font-size:1.25rem;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:.5rem}
     .logo .cx{color:var(--accent)}
     .logo .sub{font-size:.72rem;color:var(--muted);font-weight:400;margin-left:.2rem}
     .hdr-right{font-size:.8rem;color:var(--muted)}
-
-    /* Layout */
     main{max-width:1140px;margin:0 auto;padding:2rem 1.5rem}
-
-    /* Featured */
     .featured{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:3rem}
     .video-wrap{background:#000}
     #main-player{width:100%;display:block;aspect-ratio:16/9}
@@ -32,8 +22,6 @@
     .featured-meta h2{font-size:1.1rem;line-height:1.5}
     .ep-date{font-size:.8rem;color:var(--muted)}
     .ep-desc{font-size:.87rem;color:var(--muted);line-height:1.65}
-
-    /* Past */
     .section-label{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:.6rem;margin-bottom:1.2rem}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.2rem}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s}
@@ -45,10 +33,7 @@
     .card-body{padding:.75rem}
     .card-date{font-size:.73rem;color:var(--muted);margin-bottom:.2rem}
     .card-title{font-size:.88rem;font-weight:600;line-height:1.4}
-
-    /* Footer */
     footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.78rem;border-top:1px solid var(--border);margin-top:3rem}
-
     @media(max-width:700px){.featured{grid-template-columns:1fr}}
   </style>
 </head>
@@ -112,17 +97,25 @@
             <p class="card-title">Top 5 Cyber Stories — May 27, 2026</p>
           </div>
         </div>
+        <div class="card" onclick="playEpisode('videos/2026-05-27.mp4','thumbnails/2026-05-27.jpg')">
+          <div class="thumb-wrap">
+            <img src="thumbnails/2026-05-27.jpg" alt="Top 5 Cyber Stories — May 27, 2026" loading="lazy">
+            <div class="play-overlay">&#9654;</div>
+          </div>
+          <div class="card-body">
+            <p class="card-date">May 27, 2026</p>
+            <p class="card-title">Top 5 Cyber Stories — May 27, 2026</p>
+          </div>
+        </div>
     </div>
   </section>
 </main>
-<footer>Coralogix CyberTube &nbsp;·&nbsp; Sources: The Hacker News · BleepingComputer · SecurityWeek · Krebs on Security &nbsp;·&nbsp; Summaries by Claude AI</footer>
+<footer>Coralogix CyberTube &nbsp;·&nbsp; The Hacker News · BleepingComputer · SecurityWeek · Krebs on Security</footer>
 <script>
   function playEpisode(src, poster) {
     var p = document.getElementById('main-player');
-    p.poster = poster;
-    p.src = src;
-    p.play();
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    p.poster = poster; p.src = src; p.play();
+    window.scrollTo({top:0, behavior:'smooth'});
   }
 </script>
 </body>
